@@ -1,80 +1,78 @@
-# AR-GhostNet | The Master Command Center
+# AR-GhostNet | Command Center (The Brain Integration)
 # Location: main.py
 
-import os
 import sys
 from utils.colors import Colors
-from config.settings import Settings
-
-# Importing all modules
+from core.autopilot import AutoPilot
 from modules.reconnaissance.port_scanner import PortScanner
-from modules.reconnaissance.banner_grabber import BannerGrabber
 from modules.reconnaissance.fingerprinter import Fingerprinter
 from modules.exploitation.dir_bruter import DirBruter
-from modules.exploitation.stresser import Stresser
 from modules.exploitation.sqli_engine import SQLiEngine
+from modules.stresser.stresser import Stresser
 
 class GhostNetMain:
     def __init__(self):
-        self.version = "2.0 (Enterprise)"
         self.running = True
+        self.target = ""
 
     def clear_screen(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
-
-    def show_banner(self):
-        banner = f"""
-{Colors.CYAN}
-  █████╗ ██████╗   ██████╗╗   ╗ ██████╗ ███╗   ██╗███████╗██████╗ 
- ██+   ███╗   ██  ██╔═══██╗ ╔╝ ██╔════╣ ████╗  ██║██╔════╝██╔══██╗
- ██   ███║   ██║  ██║   ██║ ║  ██║  ██║ ██lVert  ██║█████╗  ██████╗ 
- ██   ████║   ██║  ██║   ██║ ║  ██║  ██║ ██lVert  ██║██╔══╝  ██╔══██╗
- ╚█████╝╚██████╔╝  ╚██████╔╝ ╚╝ ╚██████╗ ██████╗██║██████╗ ██║  ██║
-  ╚══════ ╚══════╝   ╚══════╝    ╚══════╝ ╚══════╝╚══════╝ ╚═╝  ╚═╝
-           {Colors.YELLOW}>>> GHOST-NET FRAMEWORK {Colors.RESET} | Version: {self.version}
-{Colors.RESET}"""
-        print(banner)
+        print("\033[H\033[J", end="")
 
     def main_menu(self):
         while self.running:
             self.clear_screen()
-            self.show_banner()
+            print(f"""{Colors.CYAN}
+    ██████╗ ██████╗   ██████╗ ██╗  ██╗   ██╗███╗   ██╗██████╗ ██╗  ██╗██╗   ██╗███████╗
+    ██╔════╝ ██╔═══██╗██╔════╝ ██║  ██║   ██║████╗  ██║██╔══██╗██║  ██║██║   ██║██╔════╝
+    ██║     ██║   ██║ ██║  ██╗ ██║  ██║   ██║██╔██╗ ██║██║  ██║███████║██║   ██║█████╗ 
+    ██║     ██║   ██║ ██║   ██║ ██║  ██║   ██║██║╚██╗██║██║  ██║██╔══██║██║   ██║██╔══╝ 
+    ██████╗ ██║   ██║ ███████╗  ██║  ██║   ██║██║ ╚████║██████╔╝██║  ██║╚██╗ ███║██████╗ 
+    ╚═════╝ ╚════╝╚══╝ ╚══════╝ ╚═╝  ╚═╝   ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝ ╚══╝ ╚══╝╚═════╝
+                                 [ ENTERPRISE EDITION ]
+            {Colors.RESET}""")
             
-            print(f"{Colors.WHITE}[+] Main Control Panel{Colors.RESET}")
-            print(f"{Colors.YELLOW}--------------------------------------------------{Colors.RESET}")
-            print(f"{Colors.CYAN} [1] {Colors.WHITE}The Eye (Port Scanner){Colors.RESET}")
-            print(f"{Colors.CYAN} [2] {Colors.WHITE}The Whisperer (Banner Grabber){Colors.RESET}")
-            print(f"{Colors.CYAN} [3] {Colors.WHITE}The Mimic (Fingerprinter){Colors.RESET}")
-            print(f"{Colors.CYAN} [4] {Colors.WHITE}The Blade (Directory Bruter){Colors.RESET}")
-            print(f"{Colors.CYAN} [5] {Colors.WHITE}The Key (SQLi Engine){Colors.RESET}")
-            print(f"{Colors.CYAN} [6] {Colors.WHITE}The Hammer (Stresser/DDoS){Colors.RESET}")
-            print(f"{Colors.RED} [0] {Colors.WHITE}Exit GhostNet{Colors.RESET}")
-            print(f"{Colors.YELLOW}--------------------------------------------------{Colors.RESET}")
+            print(f"{Colors.WHITE}Select an Operation:{Colors.RESET}")
+            print(f"{Colors.YELLOW} [1] The Eye (Port Scanner){Colors.RESET}")
+            print(f"{Colors.YELLOW} [2] The Whisperer (Fingerprinter){Colors.RESET}")
+            print(f"{Colors.YELLOW} [3] The Blade (Directory Bruter){Colors.RESET}")
+            print(f"{Colors.YELLOW} [4] The Key (SQLi Engine){Colors.RESET}")
+            print(f"{Colors.YELLOW} [5] The Hammer (Stresser){Colors.RESET}")
+            print(f"{Colors.GREEN} [6] THE BRAIN (Auto-Pilot Mode){Colors.RESET}")
+            print(f"{Colors.RED} [0] Shutdown GhostNet{Colors.RESET}")
+            print(f"{Colors.CYAN}--------------------------------------------------{Colors.RESET}")
             
-            choice = input(f"{Colors.GREEN}GhostNet-Shell > {Colors.RESET}")
+            choice = input(f"{Colors.WHITE}GhostNet > {Colors.RESET}")
 
-            if choice == '1':
-                PortScanner().start()
-            elif choice == '2':
-                BannerGrabber().start()
-            elif choice == '3':
-                Fingerprinter().start()
-            elif choice == '4':
-                DirBruter().start()
-            elif choice == '5':
-                SQLiEngine().start()
-            elif choice == '6':
-                Stresser().start()
-            elif choice == '0':
+            if choice == '0':
                 print(f"{Colors.RED}[!] Shutting down GhostNet...{Colors.RESET}")
                 self.running = False
-            else:
-                print(f"{Colors.RED}[!] Invalid selection. Try again.{Colors.RESET}")
-                input(f"{Colors.YELLOW}Press Enter to continue...{Colors.RESET}")
+                break
+            
+            if choice in ['1', '2', '3', '4', '5', '6']:
+                self.target = input(f"{Colors.YELLOW}Enter Target URL/IP: {Colors.RESET}")
+                if not self.target:
+                    print(f"{Colors.RED}[!] Target cannot be empty!{Colors.RESET}")
+                    continue
 
-    def run(self):
-        self.main_menu()
+                if choice == '1':
+                    PortScanner().scan(self.target)
+                elif choice == '2':
+                    Fingerprinter().identify(self.target)
+                elif choice == '3':
+                    DirBruter().brute(self.target)
+                elif choice == '4':
+                    SQLiEngine().run(self.target)
+                elif choice == '5':
+                    Stresser().launch(self.target)
+                elif choice == '6':
+                    AutoPilot().run_full_scan(self.target)
+                
+                input(f"\n{Colors.CYAN}[!] Operation complete. Press Enter to return to menu...{Colors.RESET}")
 
 if __name__ == "__main__":
-    app = GhostNetMain()
-    app.run()
+    try:
+        app = GhostNetMain()
+        app.main_menu()
+    except KeyboardInterrupt:
+        print(f"\n{Colors.RED}[!] Forced shutdown detected. Exiting...{Colors.RESET}")
+        sys.exit()
