@@ -1,77 +1,57 @@
-# AR-GhostNet | Sub-Domain Discovery Engine (UPGRADED)
-# Location: modules/reconnaissance/sub_domainer.py
-
-import os
 import requests
+import threading
 from concurrent.futures import ThreadPoolExecutor
-from utils.colors import Colors
-from config.settings import Settings
 
-class SubDomainer:
-    def __init__(self, wordlist_path=None, threads=30):
-        self.timeout = Settings.DEFAULT_TIMEOUT
-        self.threads = threads
-        self.found_subdomains = []
+class TheGhostMapper:
+    def __init__(self, domain):
+        # Ensure domain doesn't have http/https prefix for DNS lookup
+        self.domain = domain.replace("http://", "").replace("https://", "").split('/')[0]
+        self.discovered_subdomains = []
         
-        # Load wordlist
-        if wordlist_path and os.path.exists(wordlist_path):
-            with open(wordlist_path, 'r', errors='ignore') as f:
-                self.common_subdomains = [line.strip() for line in f if line.strip()]
-        else:
-            # Default internal list
-            self.common_subdomains = [
-                "www", "mail", "ftp", "admin", "dev", "test", "staging", "api", 
-                "blog", "vpn", "remote", "portal", "db", "jenkins", "git",
-                "login", "dashboard", "panel", "cpanel", "webmail", "cdn", "static",
-                "images", "assets", "files", "download", "uploads", "backup"
-            ]
-
-    def check_subdomain(self, domain, sub):
-        """Checks a single subdomain for both HTTP and HTTPS."""
-        targets = [
-            f"http://{sub}.{domain}",
-            f"https://{sub}.{domain}"
+        # Deadly Sub-domain Wordlist: Focuses on dev, staging, and admin environments
+        self.wordlist = [
+            "www", "mail", "ftp", "smtp", "pop", "http", "https", "ns1", "ns2",
+            "dev", "development", "staging", "test", "api", "admin", "webmail",
+            "vpn", "remote", "portal", "cloud", "db", "sql", "private", "corp",
+            "internal", "auth", "login", "app", "beta", "old", "new", "m", "mobile"
         ]
-        
-        for url in targets:
-            try:
-                response = requests.get(url, timeout=self.timeout)
-                if response.status_code == 200:
-                    self.found_subdomains.append(sub)
-                    print(f"{Colors.GREEN}[+] Found Active Subdomain: {sub}.{domain} ({url}){Colors.RESET}")
-                    break  # Stop checking the other protocol if one works
-            except requests.exceptions.RequestException:
-                pass  # Silent fail
 
-    def discover(self, domain):
-        print(f"{Colors.CYAN}[*] Ghost-Mapper: Launching multi-threaded subdomain scan on {domain}...{Colors.RESET}")
-        print(f"{Colors.CYAN}[*] Scanning {len(self.common_subdomains)} subdomains using {self.threads} threads.{Colors.RESET}")
-        self.found_subdomains = []
+    def resolve_subdomain(self, sub):
+        # Construct the full subdomain URL
+        subdomain = f"{sub}.{self.domain}"
+        try:
+            # We use requests to check if the subdomain is actually reachable (HTTP/HTTPS)
+            # This is more reliable than simple DNS lookup for web targets
+            response = requests.get(f"http://{subdomain}", timeout=3)
+            if response.status_code == 200:
+                print(f"[+] Found Active Subdomain: {subdomain} (Status: 200)")
+                self.discovered_subdomains.append(subdomain)
+        except requests.exceptions.ConnectionError:
+            # This means the subdomain doesn't exist or isn't reachable via HTTP
+            pass
+        except Exception:
+            pass
+
+    def run(self):
+        print(f"\n[!] THE GHOST-MAPPER: ACTIVATING SUB-DOMAIN RECON")
+        print(f"[*] Mapping Target: {self.domain}")
+        print("-" * 60)
         
-        # Multi-threaded execution
-        with ThreadPoolExecutor(max_workers=self.threads) as executor:
-            executor.map(lambda sub: self.check_subdomain(domain, sub), self.common_subdomains)
+        # High-speed execution using ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=50) as executor:
+            executor.map(self.resolve_subdomain, self.wordlist)
         
-        if not self.found_subdomains:
-            print(f"{Colors.YELLOW}[-] No common subdomains found.{Colors.RESET}")
+        print("-" * 60)
+        if self.discovered_subdomains:
+            print(f"[+] Total Sub-domains Discovered: {len(self.discovered_subdomains)}")
+            for sub in self.discovered_subdomains:
+                print(f" >> {sub}")
         else:
-            print(f"{Colors.GREEN}[!] Total Subdomains Found: {len(self.found_subdomains)}{Colors.RESET}")
-            for sub in self.found_subdomains:
-                print(f"  {Colors.GREEN}➜{Colors.RESET} {sub}.{domain}")
+            print("[!] No public sub-domains found. Target is tight or using wildcards.")
         
-        return self.found_subdomains
+        print("-" * 60)
+        print("[+] Domain Mapping Complete.")
 
-    def start(self):
-        print(f"{Colors.CYAN}--- THE GHOST-MAPPER: Sub-Domain Discovery ---{Colors.RESET}")
-        target_domain = input(f"{Colors.GREEN}Enter Target Domain (e.g., google.com): {Colors.RESET}")
-        
-        if not target_domain:
-            print(f"{Colors.RED}[!] Domain cannot be empty.{Colors.RESET}")
-            return
-
-        self.discover(target_domain)
-
-# For standalone testing
-if __name__ == "__main__":
-    mapper = SubDomainer()
-    mapper.start()
+# Example for testing:
+# mapper = TheGhostMapper("google.com")
+# mapper.run()
