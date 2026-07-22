@@ -55,7 +55,7 @@ class GhostNetMain:
                     continue
 
                 if choice == '1':
-                    PortScanner(self.target).scan(self.target)
+                    PortScanner(self.target).run()
                 elif choice == '2':
                     Fingerprinter().identify(self.target)
                 elif choice == '3':
