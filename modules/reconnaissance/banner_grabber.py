@@ -1,68 +1,63 @@
-# AR-GhostNet | Module: Banner Grabber (The Whisperer)
-# Location: modules/reconnaissance/banner_grabber.py
-
 import socket
-from utils.colors import Colors
-from core.network_manager import NetworkManager
+from concurrent.futures import ThreadPoolExecutor
 
-class BannerGrabber:
-    def __init__(self):
-        self.net_manager = NetworkManager()
+class TheWhisperer:
+    def __init__(self, target):
+        self.target = target
+        self.banners = {}
 
-    def grab_banner(self, target, port):
-        """Attempts to grab the service banner from a specific port."""
+    def grab_banner(self, port):
+        """Connects to a port and listens for the service banner."""
         try:
-            # Create a socket connection
+            # Creating a socket with a short timeout to avoid hanging
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(3) # Give it a bit more time to respond
-                s.connect((target, port))
+                s.settimeout(3)
+                # Attempt to connect
+                result = s.connect_ex((self.target, port))
                 
-                # Some services require a trigger to send the banner
-                # We send a generic request to provoke a response
-                s.send(b"HEAD / HTTP/1.1\r\n\r\n") 
-                
-                banner = s.recv(1024).decode('utf-8', errors='ignore').strip()
-                if banner:
-                    return banner
-                return "No banner returned (Silent Service)"
-        except Exception as e:
-            return f"Could not grab banner: {str(e)}"
+                if result == 0:
+                    # Some services require a probe to send a banner
+                    # We send a generic request to trigger a response
+                    s.send(b"HEAD / HTTP/1.1\r\n\r\n") 
+                    banner = s.recv(1024).decode(errors='ignore').strip()
+                    
+                    if banner:
+                        self.banners[port] = banner
+                    else:
+                        self.banners[port] = "Open (Silent/No Banner)"
+        except Exception:
+            pass
 
-    def start_grabbing(self, target, ports):
-        """Grabs banners for a list of open ports."""
-        # Resolve domain to IP
-        try:
-            target_ip = socket.gethostbyname(target)
-        except socket.gaierror:
-            Colors.log_error(f"Invalid target: {target}")
+    def run(self, open_ports):
+        """
+        Takes a list of open ports (usually from The Eye/Port Scanner) 
+        and grabs banners for each.
+        """
+        print(f"\n[!] THE WHISPERER: LISTENING FOR SERVICE BANNERS")
+        print(f"[*] Target: {self.target}")
+        print("-" * 60)
+
+        if not open_ports:
+            print("[!] No open ports provided. Provide a list of ports to grab banners.")
             return
 
-        Colors.log_info(f"Listening for whispers from {target} ({target_ip})...")
-        
-        for port in ports:
-            Colors.log_info(f"Querying Port {port}...")
-            banner = self.grab_banner(target_ip, port)
-            if "Error" not in banner:
-                Colors.log_success(f"[+] Port {port} Banner: {banner}")
-            else:
-                Colors.log_error(f"[-] Port {port}: {banner}")
+        # Multi-threaded grabbing for efficiency
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            executor.map(self.grab_banner, open_ports)
 
-    def start(self, target):
-        """Wrapper method to get ports manually from user input."""
-        print(f"{Colors.CYAN}[!] Enter the ports you want to grab banners from.")
-        ports_input = input("Enter ports (comma separated): ").strip()
-        if not ports_input:
-            Colors.log_error("No ports provided.")
-            return
-        try:
-            ports = [int(p.strip()) for p in ports_input.split(',')]
-        except ValueError:
-            Colors.log_error("Invalid port list. Please use numbers separated by commas.")
-            return
-        self.start_grabbing(target, ports)
+        if self.banners:
+            print(f"{'PORT':<10} | {'SERVICE BANNER / INTEL'}")
+            print("-" * 60)
+            for port, banner in sorted(self.banners.items()):
+                # Clean the banner to remove excess noise
+                clean_banner = banner.split('\n')[0] # Get first line only
+                print(f"{port:<10} | {clean_banner}")
+        else:
+            print("[!] No banners leaked. Target is likely using banner-grabbing protection.")
 
-# Testing Block
-if __name__ == "__main__":
-    grabber = BannerGrabber()
-    target = input("Enter Target (e.g., google.com): ")
-    grabber.start(target)
+        print("-" * 60)
+        print("[+] Banner Intelligence Gathering Complete.")
+
+# Example for testing:
+# whisper = TheWhisperer("scanme.nmap.org")
+# whisper.run([22, 80, 443]) # Pass a list of open ports
