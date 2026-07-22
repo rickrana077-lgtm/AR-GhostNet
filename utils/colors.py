@@ -45,10 +45,50 @@ class Colors:
     def log_warning(message):
         print(f"{Colors.WARNING} {Fore.YELLOW}{message}")
 
+    # --- UPGRADED FEATURES ---
+
+    @staticmethod
+    def spinner(message="Loading", duration=3):
+        """Shows a spinning animation while loading."""
+        import sys, time
+        frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        end_time = time.time() + duration
+        i = 0
+        while time.time() < end_time:
+            sys.stdout.write(f'\r{Colors.CYAN}{frames[i % 10]} {message}...')
+            sys.stdout.flush()
+            time.sleep(0.1)
+            i += 1
+        print()
+
+    @staticmethod
+    def progress_bar(current, total, message="Progress"):
+        """Shows a visual progress bar."""
+        percent = int((current / total) * 100)
+        bar = '█' * (percent // 2) + '░' * (50 - (percent // 2))
+        print(f"\r{Colors.CYAN}{message}: [{bar}] {percent}%", end="")
+
+    @staticmethod
+    def boxed_header(text, color=Fore.CYAN):
+        """Prints a header inside a stylish box."""
+        border = "+" + "-" * (len(text) + 2) + "+"
+        print(f"{color}{border}")
+        print(f"{color}| {text} |")
+        print(f"{color}{border}{Style.RESET_ALL}")
+
+    @staticmethod
+    def hacker_mode():
+        """Activates the classic hacker terminal vibe."""
+        print(f"{Colors.RED}HACKER MODE ACTIVATED!{Colors.RESET}")
+
 # Example Usage (Testing)
 if __name__ == "__main__":
-    print("Testing AR-GhostNet Color System...")
+    print("Testing AR-GhostNet Color System with Upgrades...")
     Colors.log_success("System online and ready.")
     Colors.log_error("Connection failed: Target unreachable.")
     Colors.log_info("Scanning for open ports...")
     Colors.log_warning("High latency detected.")
+    Colors.spinner("Loading enhanced modules", duration=2)
+    Colors.progress_bar(50, 100, "Scanning")
+    Colors.boxed_header(" THE HACKER TERMINAL ")
+    Colors.hacker_mode()
