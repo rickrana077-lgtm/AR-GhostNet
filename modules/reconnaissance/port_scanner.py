@@ -1,6 +1,6 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor
-from core.colors import Colors # তোর colors ফাইল থেকে কালার নিচ্ছি
+from utils.colors import Colors
 
 class PortScanner:
     def __init__(self, target):
