@@ -35,7 +35,7 @@ class PortScanner:
         print(f"{Colors.BLUE}[*] Scanning common ports and range 1-1024...")
         
         # ১ থেকে ১০২৪ পর্যন্ত সব পোর্ট + কমন পোর্টগুলোর সেট
-        target_ports = sorted(list(set(range(1, 1025) + common_ports)))
+        target_ports = sorted(list(set(list(range(1, 1025)) + common_ports)))
 
         with ThreadPoolExecutor(max_workers=100) as executor:
             results = executor.map(self.scan_port, target_ports)
