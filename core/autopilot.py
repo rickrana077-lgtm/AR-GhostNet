@@ -44,5 +44,11 @@ class AutoPilot:
         Allows the pal to define which modules they want to run in sequence.
         """
         print(f"{Colors.YELLOW}[*] Running Custom Chain for {target}...{Colors.RESET}")
-        # Logic to loop through specified modules can be added here.
-        pass
+        for module_name in modules_to_run:
+            print(f"{Colors.WHITE}[>] Running {module_name}...{Colors.RESET}")
+            if module_name == "port_scanner":
+                PortScanner().scan(target)
+            elif module_name == "fingerprinter":
+                Fingerprinter().identify(target)
+            elif module_name == "dir_bruter":
+                DirBruter().brute(target)
