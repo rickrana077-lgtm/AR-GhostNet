@@ -55,6 +55,10 @@ class PortScanner:
         else:
             Colors.log_error("No open ports found. Target is heavily shielded.")
 
+    def scan(self, target):
+        """Wrapper for main.py compatibility."""
+        self.start_scan(target)
+
 # Testing Block
 if __name__ == "__main__":
     scanner = PortScanner()
