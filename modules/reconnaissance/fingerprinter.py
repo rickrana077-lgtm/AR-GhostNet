@@ -61,6 +61,10 @@ class Fingerprinter:
 
         self.analyze(target_url)
 
+    # --- Added for main.py compatibility ---
+    def identify(self, target):
+        self.analyze(target)
+
 # For standalone testing
 if __name__ == "__main__":
     mimic = Fingerprinter()
