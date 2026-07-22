@@ -1,5 +1,5 @@
 # AR-GhostNet | Stress Testing Engine (The Hammer)
-# Location: modules/exploitation/stresser.py
+# Location: modules/stresser/stresser.py
 
 import requests
 import threading
@@ -58,6 +58,10 @@ class Stresser:
         except KeyboardInterrupt:
             self.active = False
             print(f"\n{Colors.YELLOW}[*] Stopping The Hammer... Total requests sent: {self.request_count}{Colors.RESET}")
+
+    # --- Added for main.py compatibility ---
+    def launch(self, target):
+        self.start()
 
 # For standalone testing
 if __name__ == "__main__":
