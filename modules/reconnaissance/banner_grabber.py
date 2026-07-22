@@ -47,9 +47,22 @@ class BannerGrabber:
             else:
                 Colors.log_error(f"[-] Port {port}: {banner}")
 
+    def start(self, target):
+        """Wrapper method to get ports manually from user input."""
+        print(f"{Colors.CYAN}[!] Enter the ports you want to grab banners from.")
+        ports_input = input("Enter ports (comma separated): ").strip()
+        if not ports_input:
+            Colors.log_error("No ports provided.")
+            return
+        try:
+            ports = [int(p.strip()) for p in ports_input.split(',')]
+        except ValueError:
+            Colors.log_error("Invalid port list. Please use numbers separated by commas.")
+            return
+        self.start_grabbing(target, ports)
+
 # Testing Block
 if __name__ == "__main__":
     grabber = BannerGrabber()
     target = input("Enter Target (e.g., google.com): ")
-    ports = [80, 443, 21, 22] # Test with common ports
-    grabber.start_grabbing(target, ports)
+    grabber.start(target)
