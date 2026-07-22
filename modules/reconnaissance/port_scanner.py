@@ -1,66 +1,52 @@
-# AR-GhostNet | Module: Port Scanner (The Eye)
-# Location: modules/reconnaissance/port_scanner.py
-
 import socket
 from concurrent.futures import ThreadPoolExecutor
-from utils.colors import Colors
-from core.network_manager import NetworkManager
+from core.colors import Colors # তোর colors ফাইল থেকে কালার নিচ্ছি
 
 class PortScanner:
-    def __init__(self):
-        self.net_manager = NetworkManager()
-        # Common ports to scan first for speed, then full range if needed
-        self.common_ports = [20, 21, 22, 23, 25, 53, 80, 110, 139, 443, 445, 3306, 3389, 8080]
+    def __init__(self, target):
+        self.target = target
+        self.open_ports = []
 
-    def scan_single_port(self, target, port):
-        """Attempts to connect to a specific port to see if it's open."""
+    def scan_port(self, port):
+        """একটি নির্দিষ্ট পোর্ট চেক করে তা খোলা কি না তা যাচাই করে"""
         try:
             # socket.AF_INET = IPv4, socket.SOCK_STREAM = TCP
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(0.5) # Fast timeout for speed
-                result = s.connect_ex((target, port))
+                s.settimeout(0.5) # টাইমআউট কমিয়েছি যাতে স্পিড বাড়ে
+                result = s.connect_ex((self.target, port))
                 if result == 0:
                     return port
         except Exception:
             pass
         return None
 
-    def start_scan(self, target):
-        """Main function to execute the scan using multi-threading."""
-        # Resolve domain to IP if necessary
+    def run(self):
+        print(f"{Colors.BLUE}[*] Resolving target {self.target}...")
         try:
-            target_ip = socket.gethostbyname(target)
+            target_ip = socket.gethostbyname(self.target)
+            print(f"{Colors.GREEN}[+] Target IP found: {target_ip}")
         except socket.gaierror:
-            Colors.log_error(f"Could not resolve hostname: {target}")
+            print(f"{Colors.RED}[!] Could not resolve hostname.")
             return
 
-        Colors.log_info(f"Initiating Deadly Scan on: {target} ({target_ip})")
-        Colors.log_info("Scanning common ports... Please wait.")
+        # কমন পোর্টগুলোর একটা লিস্ট, তবে ইউজার চাইলে রেঞ্জ দিতে পারবে
+        common_ports = [21, 22, 23, 25, 53, 80, 110, 139, 443, 445, 1080, 3306, 3389, 8080]
         
-        open_ports = []
+        print(f"{Colors.BLUE}[*] Scanning common ports and range 1-1024...")
         
-        # Using ThreadPoolExecutor to scan multiple ports simultaneously (Deadly Speed)
+        # ১ থেকে ১০২৪ পর্যন্ত সব পোর্ট + কমন পোর্টগুলোর সেট
+        target_ports = sorted(list(set(range(1, 1025) + common_ports)))
+
         with ThreadPoolExecutor(max_workers=100) as executor:
-            # Mapping the scan function over the list of common ports
-            results = executor.map(lambda p: self.scan_single_port(target_ip, p), self.common_ports)
-            
-            for port in results:
-                if port:
-                    open_ports.append(port)
+            results = executor.map(self.scan_port, target_ports)
 
-        if open_ports:
-            Colors.log_success(f"Scan Complete! Found {len(open_ports)} open ports:")
-            for p in open_ports:
-                print(f"{Colors.INFO} [!] Port {p} is OPEN")
+        for port in results:
+            if port:
+                self.open_ports.append(port)
+
+        if self.open_ports:
+            print(f"{Colors.GREEN}[+] Scan Complete! Found {len(self.open_ports)} open ports:")
+            for p in sorted(self.open_ports):
+                print(f"{Colors.GREEN}[!] Port {p} is OPEN")
         else:
-            Colors.log_error("No open ports found. Target is heavily shielded.")
-
-    def scan(self, target):
-        """Wrapper for main.py compatibility."""
-        self.start_scan(target)
-
-# Testing Block
-if __name__ == "__main__":
-    scanner = PortScanner()
-    target = input("Enter Target IP or Domain (e.g., google.com): ")
-    scanner.start_scan(target)
+            print(f"{Colors.RED}[!] No open ports found. Target is heavily shielded.")
