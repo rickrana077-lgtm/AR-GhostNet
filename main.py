@@ -6,7 +6,7 @@ from utils.colors import Colors
 from core.autopilot import AutoPilot
 from modules.reconnaissance.port_scanner import PortScanner
 from modules.reconnaissance.fingerprinter import Fingerprinter
-from modules.exploitation.the_blade import TheBlade
+from modules.exploitation.dir_bruter import DirBruter
 from modules.exploitation.sqli_engine import SQLiEngine
 from modules.stresser.stresser import Stresser
 
@@ -59,7 +59,7 @@ class GhostNetMain:
                 elif choice == '2':
                     Fingerprinter().identify(self.target)
                 elif choice == '3':
-                    TheBlade(self.target).run()
+                    DirBruter(self.target).run()
                 elif choice == '4':
                     SQLiEngine().run(self.target)
                 elif choice == '5':
